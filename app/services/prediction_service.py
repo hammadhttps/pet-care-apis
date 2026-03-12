@@ -12,6 +12,8 @@ class PredictionService:
         self.dog_model = None
         self.cat_features = None
         self.dog_features = None
+        self.cat_label_encoder = None
+        self.dog_label_encoder = None
         self.disease_categories = None
         
     def load_models(self):
@@ -24,8 +26,17 @@ class PredictionService:
             model_data = joblib.load(cat_model_path)
             if isinstance(model_data, dict):
                 self.cat_model = model_data.get('model')
-                self.cat_features = model_data.get('features')
-                self.disease_categories = model_data.get('categories')
+                self.cat_features = model_data.get('features') or model_data.get('feature_columns')
+                if isinstance(self.cat_features, dict):
+                    ordered_groups = ["categorical", "numerical", "binary"]
+                    flattened: List[str] = []
+                    for group in ordered_groups:
+                        cols = self.cat_features.get(group) or []
+                        flattened.extend(list(cols))
+                    self.cat_features = flattened
+
+                self.cat_label_encoder = model_data.get('label_encoder')
+                self.disease_categories = model_data.get('categories') or model_data.get('disease_names')
             else:
                 self.cat_model = model_data
         
@@ -34,8 +45,17 @@ class PredictionService:
             model_data = joblib.load(dog_model_path)
             if isinstance(model_data, dict):
                 self.dog_model = model_data.get('model')
-                self.dog_features = model_data.get('features')
-                self.disease_categories = model_data.get('categories')
+                self.dog_features = model_data.get('features') or model_data.get('feature_columns')
+                if isinstance(self.dog_features, dict):
+                    ordered_groups = ["categorical", "numerical", "binary"]
+                    flattened: List[str] = []
+                    for group in ordered_groups:
+                        cols = self.dog_features.get(group) or []
+                        flattened.extend(list(cols))
+                    self.dog_features = flattened
+
+                self.dog_label_encoder = model_data.get('label_encoder')
+                self.disease_categories = model_data.get('categories') or model_data.get('disease_names')
             else:
                 self.dog_model = model_data
     
@@ -89,6 +109,7 @@ class PredictionService:
         
         # Select model
         model = self.cat_model if animal_type == 'cat' else self.dog_model
+        label_encoder = self.cat_label_encoder if animal_type == "cat" else self.dog_label_encoder
         
         if model is None:
             raise ValueError(f"{animal_type.capitalize()} model not loaded")
@@ -118,9 +139,21 @@ class PredictionService:
             probabilities = model.predict_proba(processed_data)[0]
             confidence = float(max(probabilities))
         
-        # Convert prediction to disease name if using encoded categories
+        # Convert encoded numeric prediction to disease label when possible
+        if label_encoder is not None and isinstance(prediction, (int, np.integer)):
+            try:
+                prediction = label_encoder.inverse_transform([int(prediction)])[0]
+            except Exception:
+                pass
+
+        # Back-compat: support dict/list mappings if present
         if self.disease_categories and isinstance(prediction, (int, np.integer)):
-            prediction = self.disease_categories.get(prediction, prediction)
+            if isinstance(self.disease_categories, dict):
+                prediction = self.disease_categories.get(prediction, prediction)
+            elif isinstance(self.disease_categories, (list, tuple, np.ndarray)):
+                idx = int(prediction)
+                if 0 <= idx < len(self.disease_categories):
+                    prediction = self.disease_categories[idx]
         
         return {
             'prediction': str(prediction),
