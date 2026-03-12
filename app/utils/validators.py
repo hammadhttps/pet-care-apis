@@ -7,7 +7,7 @@ async def validate_pet_data(pet_data: PetHealthData) -> Dict[str, Any]:
     """
     Additional validation for pet health data.
     """
-    data_dict = pet_data.dict()
+    data_dict = pet_data.model_dump()
 
     animal_type = data_dict["Animal_Type"].lower()
     age = data_dict["Age"]

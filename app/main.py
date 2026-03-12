@@ -1,8 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
-import joblib
-import os
 
 from app.schemas.prediction import (
     PetHealthData, 
@@ -58,7 +56,7 @@ async def get_available_models():
 @app.post("/predict/cat", response_model=PredictionResponse)
 async def predict_cat_disease(
     pet_data: PetHealthData,
-    validated_data: dict = Depends(validate_pet_data)
+    _validated_data: dict = Depends(validate_pet_data)
 ):
     """
     Predict disease for cats based on provided symptoms and health data
@@ -72,7 +70,7 @@ async def predict_cat_disease(
         
         result = prediction_service.predict(
             animal_type="cat",
-            data=pet_data.dict()
+            data=pet_data.model_dump()
         )
         
         return PredictionResponse(
@@ -80,7 +78,7 @@ async def predict_cat_disease(
             prediction=result["prediction"],
             confidence=result.get("confidence"),
             message="Prediction completed successfully",
-            data=pet_data.dict()
+            data=pet_data.model_dump()
         )
     
     except Exception as e:
@@ -92,7 +90,7 @@ async def predict_cat_disease(
 @app.post("/predict/dog", response_model=PredictionResponse)
 async def predict_dog_disease(
     pet_data: PetHealthData,
-    validated_data: dict = Depends(validate_pet_data)
+    _validated_data: dict = Depends(validate_pet_data)
 ):
     """
     Predict disease for dogs based on provided symptoms and health data
@@ -106,7 +104,7 @@ async def predict_dog_disease(
         
         result = prediction_service.predict(
             animal_type="dog",
-            data=pet_data.dict()
+            data=pet_data.model_dump()
         )
         
         return PredictionResponse(
@@ -114,7 +112,7 @@ async def predict_dog_disease(
             prediction=result["prediction"],
             confidence=result.get("confidence"),
             message="Prediction completed successfully",
-            data=pet_data.dict()
+            data=pet_data.model_dump()
         )
     
     except Exception as e:
@@ -126,7 +124,7 @@ async def predict_dog_disease(
 @app.post("/predict", response_model=PredictionResponse)
 async def predict_disease(
     pet_data: PetHealthData,
-    validated_data: dict = Depends(validate_pet_data)
+    _validated_data: dict = Depends(validate_pet_data)
 ):
     """
     Auto-detect animal type and predict disease
@@ -149,7 +147,7 @@ async def predict_disease(
         
         result = prediction_service.predict(
             animal_type=animal_type,
-            data=pet_data.dict()
+            data=pet_data.model_dump()
         )
         
         return PredictionResponse(
@@ -157,7 +155,7 @@ async def predict_disease(
             prediction=result["prediction"],
             confidence=result.get("confidence"),
             message="Prediction completed successfully",
-            data=pet_data.dict()
+            data=pet_data.model_dump()
         )
     
     except Exception as e:
