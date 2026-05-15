@@ -2,13 +2,16 @@ from pydantic import BaseModel, Field, validator
 from typing import Optional, List
 from enum import Enum
 
+
 class AnimalType(str, Enum):
     CAT = "Cat"
     DOG = "Dog"
 
+
 class Sex(str, Enum):
     MALE = "Male"
     FEMALE = "Female"
+
 
 class PetHealthData(BaseModel):
     Animal_Type: str = Field(..., description="Type of animal (Cat or Dog)")
@@ -24,25 +27,29 @@ class PetHealthData(BaseModel):
     Vomiting: int = Field(0, ge=0, le=1, description="Vomiting (0 or 1)")
     Diarrhea: int = Field(0, ge=0, le=1, description="Diarrhea (0 or 1)")
     Coughing: int = Field(0, ge=0, le=1, description="Coughing (0 or 1)")
-    Labored_Breathing: int = Field(0, ge=0, le=1, description="Labored breathing (0 or 1)")
-    Body_Temperature_in_Celsius: float = Field(..., gt=35, lt=43, description="Body temperature in Celsius")
+    Labored_Breathing: int = Field(
+        0, ge=0, le=1, description="Labored breathing (0 or 1)"
+    )
+    Body_Temperature_in_Celsius: float = Field(
+        ..., gt=35, lt=43, description="Body temperature in Celsius"
+    )
 
-    @validator('Animal_Type')
+    @validator("Animal_Type")
     def validate_animal_type(cls, v):
-        if v.lower() not in ['cat', 'dog']:
-            raise ValueError('Animal type must be either Cat or Dog')
+        if v.lower() not in ["cat", "dog"]:
+            raise ValueError("Animal type must be either Cat or Dog")
         return v.capitalize()
 
-    @validator('Sex')
+    @validator("Sex")
     def validate_sex(cls, v):
-        if v.lower() not in ['male', 'female']:
-            raise ValueError('Sex must be either Male or Female')
+        if v.lower() not in ["male", "female"]:
+            raise ValueError("Sex must be either Male or Female")
         return v.capitalize()
 
-    @validator('Appetite_Loss', 'Vomiting', 'Diarrhea', 'Coughing', 'Labored_Breathing')
+    @validator("Appetite_Loss", "Vomiting", "Diarrhea", "Coughing", "Labored_Breathing")
     def validate_binary(cls, v):
         if v not in [0, 1]:
-            raise ValueError('Value must be 0 or 1')
+            raise ValueError("Value must be 0 or 1")
         return v
 
     class Config:
@@ -62,20 +69,32 @@ class PetHealthData(BaseModel):
                 "Diarrhea": 0,
                 "Coughing": 0,
                 "Labored_Breathing": 0,
-                "Body_Temperature_in_Celsius": 38.5
+                "Body_Temperature_in_Celsius": 38.5,
             }
         }
 
-class PredictionResponse(BaseModel):
+
+class TopPrediction(BaseModel):
+    disease: str
+    probability: float
+    confidence: str
+
+
+class PredictionDetailResponse(BaseModel):
     success: bool
-    prediction: str
-    confidence: Optional[float] = None
+    animal_type: str
+    predicted_disease: str
+    confidence: float
+    top_predictions: List[TopPrediction]
+    all_probabilities: List[tuple]
     message: str
     data: Optional[dict] = None
+
 
 class HealthCheck(BaseModel):
     status: str
     message: str
+
 
 class ModelInfo(BaseModel):
     animal_type: str

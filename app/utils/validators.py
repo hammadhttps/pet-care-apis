@@ -36,10 +36,10 @@ async def validate_pet_data(pet_data: PetHealthData) -> Dict[str, Any]:
         )
 
     temp = data_dict["Body_Temperature_in_Celsius"]
-    if temp < 37 or temp > 39.5:
+    if temp < 35 or temp > 43:
         raise HTTPException(
             status_code=400,
-            detail=f"Abnormal body temperature: {temp} C. Normal range is 37-39.5 C",
+            detail=f"Abnormal body temperature: {temp} C. Normal range is 35-43 C",
         )
 
     return data_dict
